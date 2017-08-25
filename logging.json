@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "disable_existing_loggers": false,
+  "formatters": {
+      "simple": {
+        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+      },
+      "console_fmt": {
+        "format": "%(name)s - %(levelname)s - %(message)s"
+      }
+  },
+  "handlers": {
+    "console": {
+      "class": "logging.StreamHandler",
+      "level": "INFO",
+      "formatter": "simple",
+      "stream": "ext://sys.stdout"
+    },
+    "info_file_handler": {
+      "class": "logging.handlers.RotatingFileHandler",
+      "level": "INFO",
+      "formatter": "simple",
+      "filename": "log/parser.log",
+      "maxBytes": 10485760,
+      "backupCount": 5,
+      "encoding": "utf8"
+    },
+    "migration": {
+      "class": "logging.handlers.RotatingFileHandler",
+      "level": "INFO",
+      "formatter": "simple",
+      "filename": "log/migration.log",
+      "maxBytes": 10485760,
+      "backupCount": 5
+    },
+    "syncdb_handler": {
+      "class": "logging.handlers.RotatingFileHandler",
+      "level": "INFO",
+      "formatter": "simple",
+      "filename": "log/syncdb.log",
+      "maxBytes": 10485760,
+      "backupCount":5,
+      "encoding": "utf8"
+    }
+  },
+  "loggers": {
+      "oceanbuoyapp": {
+          "level": "DEBUG",
+          "handlers": ["console", "info_file_handler"],
+          "propagate": 0
+      },
+      "migration": {
+          "level": "DEBUG",
+          "handlers": ["migration"],
+          "propagate": 0
+      },
+      "zparser": {
+          "level": "DEBUG",
+          "handlers": ["console", "info_file_handler"],
+          "propagate": 0
+      },
+      "graphreporter": {
+          "level": "DEBUG",
+          "handlers": ["console", "info_file_handler"],
+          "propagate": 0
+      },
+      "tblparser": {
+          "level": "DEBUG",
+          "handlers": ["console", "info_file_handler"],
+          "propagate": 0
+      },
+      "syncdb": {
+          "level": "DEBUG",
+          "handlers": ["console", "syncdb_handler"],
+          "propagate": 0
+      }
+  },
+  "root": {
+    "level": "DEBUG",
+    "handlers": ["console", "info_file_handler"]
+  }
+}

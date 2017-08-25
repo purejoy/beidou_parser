@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title> {{ title }} </title>
+<style>
+    table {
+        border-collapse: collapse;
+        border: 1px solid black;
+        width: 100%;
+    }
+
+    th td {
+        text-align: center;
+        padding: 5px;
+    }
+
+    table tr:nth-child(even) {
+        background-color: #eee;
+    }
+
+    table tr:nth-child(odd) {
+        background-color: #fff;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h2>气温监测数据表</h2>
+        {{ qw_pivot_table }}
+        <h2 style="text-align:center;">各浮标站气温监测图</h2>
+        {% for fig in qw_figs %}
+            <img src="{{ fig }}" alt="气温监测图" style="width:450px; height:220px; margin:20px 10px 20px 10px;">
+        {% endfor %}
+    </div>
+</body>
+</html>

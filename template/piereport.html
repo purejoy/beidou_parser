@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head lang="zh-CN">
+    <meta charset="UTF-8">
+    <title> {{ title }} </title>
+<style>
+table.dataframe {
+    border-collapse:collapse;
+    width:100%;
+}
+
+table th td {
+    border-collapse:collapse;
+    margin: 20px 10px 20px 10px;
+    padding: 5px;
+    border: 1px solid black;
+    width:100%;
+}
+
+table tr:nth-child(odd) {
+    background-color:#fff;
+}
+
+table tr:nth-child(even) {
+    background-color:#eee;
+}
+
+
+th tr td {
+    text-align:center;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <h2>24小时内正点时刻报文统计</h2>
+        <table>
+            <tr>
+                <th>区站号</th>
+                <th>接收到报文数量</th>
+                <th>未接收到的报文数量</th>
+            </tr>
+        {% for row in rows %}
+            <tr>
+                <td> {{ row.buoy }} </td>
+                <td> {{ row.rcvcount }} </td>
+                <td> {{ row.dropcount }} </td>
+            </tr>
+        {% endfor %}
+        </table>
+
+        <h2 style="text-align:center;">24小时内各站点报文收录详表</h2>
+        {{ datagram_table }}
+        <h2 style="text-align:center;">图表展示</h2>
+        {% for pie in pies %}
+            <img src="{{ pie }}" alt="缺测率饼图" style="width:450px; margin:20px 10px 20px 10px;">
+        {% endfor %}
+    </div>
+</body>
+</html>
