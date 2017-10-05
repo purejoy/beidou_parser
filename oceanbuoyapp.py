@@ -11,7 +11,7 @@ import zparser
 from datetime import datetime
 from datetime import timedelta
 
-
+__author__ = "Chayce Chen"
 
 def verify_zfile(filepath):
     logger = logging.getLogger(__name__)
@@ -64,12 +64,15 @@ def parse_zfile(filepath, chunks, dburl=None, syncflush=False, **kwargs):
 
     chunk = chunks.setdefault(plfbqzh, {})
     tblnames = ['plfbjbcsb', 'plfbgcsjb', 'plfbqwsjb', 'plfbqysjb', 'plfbhwsjb', 'plfbhysjb',
-                'plfbfssjb', 'plfbfxsjb', 'plfbztxxb']
+                'plfbfssjb', 'plfbfxsjb', 'plfbztxxb', 'plfbzkxxb']
     tblrows_now = {}
     tblrows_pending = {}
     tbl_parserargs = {}
     for tbl in tblnames:
-        tblrows_now[tbl] = chunk.setdefault(tbl, [])
+        if tbl == 'plfbzkxxb':
+            tblrows_now[tbl] = chunk.setdefault(tbl, {})
+        else:
+            tblrows_now[tbl] = chunk.setdefault(tbl, [])
         tblrows_pending[tbl] = {}
         tbl_parserargs[tbl] = {}
         tbl_parserargs[tbl]['row'] = tblrows_pending[tbl]
@@ -93,6 +96,7 @@ def parse_zfile(filepath, chunks, dburl=None, syncflush=False, **kwargs):
     tbl_parserargs['plfbgcsjb']['extra']['FX'] = tblrows_now['plfbfxsjb']
     tbl_parserargs['plfbgcsjb']['extra']['JBCS'] = tblrows_now['plfbjbcsb']
     tbl_parserargs['plfbgcsjb']['extra']['ZTXX'] = tblrows_now['plfbztxxb']
+    tbl_parserargs['plfbgcsjb']['extra']['ZKXX'] = tblrows_now['plfbzkxxb']
 
     try:
         for tbl in tblnames:
@@ -130,6 +134,7 @@ def sync_chunks(chunks, dburl, **kwargs):
         syncdb.pending_rowrecords(dburl, v['plfbfssjb'], syncdb.FengSu, **options)
         syncdb.pending_rowrecords(dburl, v['plfbfxsjb'], syncdb.FengXiang, **options)
         syncdb.pending_rowrecords(dburl, v['plfbztxxb'], syncdb.BuoyStatusInfo, **options)
+        syncdb.pending_rowrecords(dburl, v['plfbzkxxb'].values(), syncdb.ElementZK, **options)
     if options['errors'] > 0:
         logger.info("本次数据写入数据库完成! 发生%s个错误", str(options['errors']))
         return False

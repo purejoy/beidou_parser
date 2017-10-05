@@ -88,7 +88,6 @@ def parse_plfbgcsjb(rawdatagram, row, extra):
     row['FS40'] = round(row['FS40'] * 0.1, 2) if row['FS40'] < 256 else round((row['FS40'] - 255) * 0.2 + 25.5, 2)
     row['FS50'] = round(row['FS50'] * 0.1, 2) if row['FS50'] < 256 else round((row['FS50'] - 255) * 0.2 + 25.5, 2)
 
-
     row['FX00'] = round(row['FX00'] * 2.8125, 2)
     row['FX10'] = round(row['FX10'] * 2.8125, 2)
     row['FX20'] = round(row['FX20'] * 2.8125, 2)
@@ -110,7 +109,7 @@ def parse_plfbgcsjb(rawdatagram, row, extra):
         row['CRCBZ'] = ''.join(['0x', row['CRCBZ'].upper()])
         row['TXBSJYH'] = ''.join(['0x', row['TXBSJYH'].upper()])
 
-    intervals = {'QW':10, 'QY':30, 'HW':15, 'HY':15, 'FS':10, 'FX':10}
+    intervals = {'QW': 10, 'QY': 30, 'HW': 15, 'HY': 15, 'FS': 10, 'FX': 10}
     elements = ['QW', 'QY', 'HW', 'HY', 'FS', 'FX']
     basemin = extra['GCRQSJ'].minute if extra['GCRQSJ'].minute > 0 else 60
     for element in elements:
@@ -118,13 +117,29 @@ def parse_plfbgcsjb(rawdatagram, row, extra):
         min_iter = 0
         while min_iter < basemin:
             try:
-                if not row[''.join([x for x in (element, ('0' + str(min_iter))[-2:], 'ZK')])]:
-                    row_element = {}
-                    row_element['PLFBQZH'] = extra['PLFBQZH']
-                    row_element['GCRQSJ'] = extra['GCRQSJ'].replace(minute=min_iter)
-                    row_element[element] = row[''.join([x for x in [element, ('0' + str(min_iter))[-2:]]])]
-                    row_element['JLWJMC'] = extra['JLWJMC']
+                zk_val = row[''.join([x for x in (element, ('0' + str(min_iter))[-2:], 'ZK')])]
+                if zk_val == 0:
+                    row_element = {
+                        'PLFBQZH': extra['PLFBQZH'],
+                        'GCRQSJ': extra['GCRQSJ'].replace(minute=min_iter),
+                        'JLWJMC': extra['JLWJMC'],
+                        element: row[''.join([x for x in [element, ('0' + str(min_iter))[-2:]]])]
+                    }
+                    # row_element['PLFBQZH'] = extra['PLFBQZH']
+                    # row_element['GCRQSJ'] = extra['GCRQSJ'].replace(minute=min_iter)
+                    # row_element[element] = row[''.join([x for x in [element, ('0' + str(min_iter))[-2:]]])]
+                    # row_element['JLWJMC'] = extra['JLWJMC']
                     extra[element].append(row_element)
+                else:
+                    zk_key = (extra['GCRQSJ'].replace(minute=min_iter), element)
+                    curr_row = extra['ZKXX'].setdefault(zk_key, {'PLFBQZH': extra['PLFBQZH'],
+                                                                 'GCRQSJ': extra['GCRQSJ'].replace(minute=min_iter),
+                                                                 'YSLX': element,
+                                                                 'ZK': 99})
+                    if zk_val < curr_row['ZK']:
+                        curr_row['ZK'] = zk_val
+                        curr_row['VALUE'] = row[''.join([x for x in [element, ('0' + str(min_iter))[-2:]]])]
+                        curr_row['JLWJMC'] = extra['JLWJMC']
             except KeyError:
                 continue
             finally:
@@ -159,26 +174,34 @@ def parse_plfbgcsjb(rawdatagram, row, extra):
     except KeyError:
         pass
 
+
 def parse_plfbqwsjb(row):
     pass
+
 
 def parse_plfbqysjb(row):
     pass
 
+
 def parse_plfbhwsjb(row):
     pass
+
 
 def parse_plfbhysjb(row):
     pass
 
+
 def parse_plfbfssjb(row):
     pass
+
 
 def parse_plfbfxsjb(row):
     pass
 
+
 def parse_plfbztxxb(row):
     pass
 
-if __name__ == '__main__':
-    parse_plfbgcsjb(0, 0, 0)
+
+def parse_plfbzkxxb(row):
+    pass

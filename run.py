@@ -21,10 +21,11 @@ def valid_date(s):
         msg = "无效日期: '{0}'.".format(s)
         raise argparse.ArgumentTypeError(msg)
 
+
 def valid_hour(s):
     try:
         hour = int(s)
-        assert(0<= hour < 24)
+        assert(0 <= hour < 24)
         return hour
     except:
         msg = "无效整点小时： '{0}'.".format(s)
@@ -46,6 +47,7 @@ def valid_buoys(s):
         return '"' + s + '"'
     else:
         return s
+
 
 def cfgparser():
     logger = logging.getLogger()
@@ -104,7 +106,6 @@ def cfgparser():
                 options['start_minute'] = 10
         else:
             options['start_minute'] = 10
-
 
         if 'Parser' in sections:
             for item in ['valid', 'qw', 'qy', 'hw', 'hy', 'fs', 'fx', 'jmzt',
@@ -167,8 +168,8 @@ if __name__ == '__main__':
     options = {}
     options['args_dstart'] = args.startdate
     options['args_dend'] = args.enddate
-    options['args_hour'] = args.hour + 1 if args.hour != None else None
-    options['args_minute'] = args.minute + 1 if args.minute != None else None
+    options['args_hour'] = args.hour + 1 if args.hour else None
+    options['args_minute'] = args.minute + 1 if args.minute else None
     options['args_buoys'] = ''.join(args.buoys) if args.buoys else None
     options['args_action'] = args.action
     options['args_override'] = args.override

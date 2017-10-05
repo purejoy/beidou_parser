@@ -10,8 +10,7 @@ from collections import OrderedDict
 import csv
 
 
-
-class ZFilesParser():
+class ZFilesParser:
     def __init__(self, rawfileDir, dStart, dEnd, start_minute=0, syncflush=False, dburl=None):
         self.rawfileDir = rawfileDir
         self.dStart = dStart
@@ -62,7 +61,6 @@ class ZFilesParser():
                         self.verifyingFailedFiles.append(filepath)
         if self.syncflush:
             self.isSynced = True
-
 
     def save_to_db(self, dburl, sync_chunks_fun, **kwargs):
         if self.chunks and not self.isSynced:
