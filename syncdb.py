@@ -460,6 +460,7 @@ class ElementZK(Base):
         return o
 
 
+'''
 class ChuanboXinxi(Base):
     __tablename__ = 'nt_cbjbxxb'
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -520,7 +521,7 @@ class HangxianBanci(Base):
     depaturetime = Column(DateTime, nullable=False)
     IMO = Column(Unicode(64))
     __table_args__ = (UniqueConstraint(routeid, depaturetime, name="banci_unique"),)
-
+'''
 
 plfbgcsjb_comments = ['系统编号', '漂流浮标区站号', '观测日期时间', '接收日期时间', '接收日期', '接收时间', '北斗通讯指令标识',
                       '数据报长度(字节)', '收信方指挥机地址', '信息类别', '发信方终端地址', '发信时间', '发信时间时', '发信时间分',
@@ -551,6 +552,7 @@ plfbhysjb_comments = ['系统编号', '漂流浮标区站号', '观测日期时�
 plfbfssjb_comments = ['系统编号', '漂流浮标区站号', '观测日期时间', '风速(m/s)', '质控', '记录文件名称']
 plfbfxsjb_comments = ['系统编号', '漂流浮标区站号', '观测日期时间', '风向(deg)', '质控', '记录文件名称']
 plfbzkxxb_comments = ['系统编号', '漂流浮标区站号', '观测日期时间', '要素类型', '质控', '要素值', '记录文件名称']
+'''
 cbjbxxb_comments = ['系统编号', '船舶代码', '海上移动通信业务标识', '呼号', '船舶名称', '国籍', '中文船名', '船舶类型',
                     '平均船速', '最大船速', '船长', '船宽', '吃水', '造船厂', '造船地点', '造船日期', '下水日期', '船舱数',
                     '甲板数', '型深', '型宽', '排水量']
@@ -558,6 +560,7 @@ hxjbxxb_comments = ['系统编号', '航线编号', '航线名称', '全程用�
                     '终点经度', '终点纬度']
 hxjhlxb_comments = ['系统编号', '航线编号', '航行时间', '到达地经度', '到达地纬度']
 hxbcb_comments = ['系统编号', '航线编号', '出发时间', '船舶代码']
+'''
 
 
 class SyncDB:
@@ -634,10 +637,10 @@ def initdbtable(dburl):
     ddls.extend(_addComments('nt_plfbfxsjb', plfbfxsjb_comments, syncinst.getengine()))
     ddls.extend(_addComments('nt_plfbztxxb', plfbztxxb_comments, syncinst.getengine()))
     ddls.extend(_addComments('nt_plfbzkxxb', plfbzkxxb_comments, syncinst.getengine()))
-    ddls.extend(_addComments('nt_cbjbxxb', cbjbxxb_comments, syncinst.getengine()))
-    ddls.extend(_addComments('nt_hxjbxxb', hxjbxxb_comments, syncinst.getengine()))
-    ddls.extend(_addComments('nt_hxjhlxb', hxjhlxb_comments, syncinst.getengine()))
-    ddls.extend(_addComments('nt_hxbcb', hxbcb_comments, syncinst.getengine()))
+    # ddls.extend(_addComments('nt_cbjbxxb', cbjbxxb_comments, syncinst.getengine()))
+    # ddls.extend(_addComments('nt_hxjbxxb', hxjbxxb_comments, syncinst.getengine()))
+    # ddls.extend(_addComments('nt_hxjhlxb', hxjhlxb_comments, syncinst.getengine()))
+    # ddls.extend(_addComments('nt_hxbcb', hxbcb_comments, syncinst.getengine()))
     syncinst.add_comments(ddls)
 
 
@@ -693,7 +696,7 @@ def getDBCon():
                 args = [urlquote(config['Database'][key]) for key in ['db', 'driver', 'user', 'password', 'host', 'dbname', 'urlparams']]
                 # args[2] = urlquote(args[2])
                 # args[3] = urlquote(args[3])
-                dburl =  '{:}+{:}://{:}:{:}@{:}/{:}?{:}'.format(*args)
+                dburl = '{:}+{:}://{:}:{:}@{:}/{:}?{:}'.format(*args)
         else:
             dburl = ''
     except KeyError:
