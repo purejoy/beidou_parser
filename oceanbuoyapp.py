@@ -77,6 +77,26 @@ def parse_zfile(filepath, chunks, dburl=None, syncflush=False, **kwargs):
         tbl_parserargs[tbl] = {}
         tbl_parserargs[tbl]['row'] = tblrows_pending[tbl]
 
+    try:
+        namefileds = os.path.basename(filepath).strip().split('_')
+        startHour = kwargs.get('starthour', 20)
+        file_gcrqsj = datetime.strptime(namefileds[4],
+                                        "%Y%m%d%H%M%S") + timedelta(hours=8)
+
+    except:
+        logger.exception(filepath)
+        file_gcrqsj = jsrqsj
+
+    if file_gcrqsj.hour >= startHour:
+        interval_begin = file_gcrqsj.replace(hour=startHour)
+        interval_end = file_gcrqsj.replace(hour=startHour) + timedelta(days=1)
+    else:
+        interval_begin = file_gcrqsj.replace(hour=startHour) - timedelta(days=1)
+        interval_end = file_gcrqsj.replace(hour=startHour)
+    dstdirname = "_".join([x for x in (interval_begin.strftime("%Y-%m-%d-%H"),
+                                       interval_end.strftime("%Y-%m-%d-%H"),
+                                       '记录文件')])
+
     tbl_parserargs['plfbjbcsb']['cols'] = cols[:9]
     tbl_parserargs['plfbgcsjb']['rawdatagram'] = rawdatagram
     tbl_parserargs['plfbgcsjb']['extra'] = {}
@@ -85,7 +105,7 @@ def parse_zfile(filepath, chunks, dburl=None, syncflush=False, **kwargs):
     tbl_parserargs['plfbgcsjb']['extra']['JSRQSJ'] = jsrqsj
     tbl_parserargs['plfbgcsjb']['extra']['JSRQ'] = jsrqsj.strftime("%Y-%m-%d")
     tbl_parserargs['plfbgcsjb']['extra']['JSSJ'] = jsrqsj.strftime("%H:%M")
-    tbl_parserargs['plfbgcsjb']['extra']['JLWJMC'] = os.path.basename(filepath)
+    tbl_parserargs['plfbgcsjb']['extra']['JLWJMC'] = os.path.join(dstdirname, os.path.basename(filepath))
     # compact flag indicates whether communication protocols were included in the datagram.
     tbl_parserargs['plfbgcsjb']['extra']['COMPACT'] = True if len(lines) == 3 else False
     tbl_parserargs['plfbgcsjb']['extra']['QW'] = tblrows_now['plfbqwsjb']
@@ -241,7 +261,7 @@ def main(**kwargs):
         else:
             logger.info("本次选择操作: 解析入库%s", "" if action == 'sync' else " 生成报告")
             zp = zparser.ZFilesParser(data_dir, dStart, dEnd, startMinute, syncflush)
-            zp.parsing(parse_zfile, verify_zfile, override=override, autoflush=autoflush)
+            zp.parsing(parse_zfile, verify_zfile, override=override, autoflush=autoflush, starthour=startHour)
             if zp.save_to_db(dburl, sync_chunks, override=override, autoflush=autoflush):
                 if not os.path.exists(migrate_dir):
                     os.mkdir(migrate_dir)

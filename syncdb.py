@@ -262,6 +262,9 @@ class QiWen(Base):
                     o = cls(**fieldnames)
                     session.add(o)
             cache[key] = o
+            session.query(ElementZK).filter(ElementZK.PLFBQZH==fieldnames['PLFBQZH'],
+                                            ElementZK.GCRQSJ==fieldnames['GCRQSJ'],
+                                            ElementZK.YSLX=='QW').delete()
         return o
 
 
@@ -291,6 +294,9 @@ class QiYa(Base):
                     o = cls(**fieldnames)
                     session.add(o)
             cache[key] = o
+            session.query(ElementZK).filter(ElementZK.PLFBQZH==fieldnames['PLFBQZH'],
+                                            ElementZK.GCRQSJ==fieldnames['GCRQSJ'],
+                                            ElementZK.YSLX=='QY').delete()
         return o
 
 
@@ -321,6 +327,9 @@ class HaiWen(Base):
                     o = cls(**fieldnames)
                     session.add(o)
             cache[key] = o
+            session.query(ElementZK).filter(ElementZK.PLFBQZH==fieldnames['PLFBQZH'],
+                                            ElementZK.GCRQSJ==fieldnames['GCRQSJ'],
+                                            ElementZK.YSLX=='HW').delete()
         return o
 
 
@@ -350,6 +359,9 @@ class HaiYan(Base):
                     o = cls(**fieldnames)
                     session.add(o)
             cache[key] = o
+            session.query(ElementZK).filter(ElementZK.PLFBQZH==fieldnames['PLFBQZH'],
+                                            ElementZK.GCRQSJ==fieldnames['GCRQSJ'],
+                                            ElementZK.YSLX=='HY').delete()
         return o
 
 
@@ -379,6 +391,9 @@ class FengSu(Base):
                     o = cls(**fieldnames)
                     session.add(o)
             cache[key] = o
+            session.query(ElementZK).filter(ElementZK.PLFBQZH==fieldnames['PLFBQZH'],
+                                            ElementZK.GCRQSJ==fieldnames['GCRQSJ'],
+                                            ElementZK.YSLX=='FS').delete()
         return o
 
 
@@ -408,6 +423,9 @@ class FengXiang(Base):
                     o = cls(**fieldnames)
                     session.add(o)
             cache[key] = o
+            session.query(ElementZK).filter(ElementZK.PLFBQZH==fieldnames['PLFBQZH'],
+                                            ElementZK.GCRQSJ==fieldnames['GCRQSJ'],
+                                            ElementZK.YSLX=='FX').delete()
         return o
 
 

@@ -14,7 +14,11 @@ from windrose import plot_windrose
 import logging
 from sys import stdout
 import matplotlib.dates as mdates
-
+from docxtpl import DocxTemplate
+from docxtpl import InlineImage
+from docx.shared import Mm
+import folium
+import folium.plugins as plugins
 
 def plotpie_by_buoy(dstart, dend, yieldpath, engine, **kwargs):
     logger = logging.getLogger(__name__)
@@ -233,6 +237,14 @@ def plotfigs_daily(dstart, dend, yieldpath, **kwargs):
         # return
     major_xlabels = gen_xlabels(dstart, dend)
     engine = syncdb.getDBCon()
+    if not (kwargs.get('args_buoys') or kwargs.get('valid_buoys')):
+        try:
+            qzh_df = pd.read_sql_query('select plfbqzh from nt_plfbjbcsb;', engine)
+            qzh_df['plfbqzh'] = qzh_df.apply(lambda row: '"' + row['plfbqzh'] + '"', axis=1)
+            kwargs['all_buoys'] = ','.join(qzh_df['plfbqzh'])
+        except:
+            logger.warning('获取所有区站号失败')
+
     errors += plot_wind_barbs(dstart, dend, os.path.join(yieldpath, dirname), engine, major_xlabels=major_xlabels, **kwargs)
     logger.debug("准备绘制到报率饼图")
     errors += plotpie_by_buoy(dstart, dend, os.path.join(yieldpath, dirname), engine, **kwargs)
@@ -270,12 +282,134 @@ def plotfigs_daily(dstart, dend, yieldpath, **kwargs):
 
     errors += exporttbls_by_item({'itemname': 'yxzt,dwhztzt', 'tblname': 'nt_plfbgcsjb'}, dstart, dend,
                                  os.path.join(yieldpath, dirname), engine, **kwargs)
-
+    export_docx(os.path.join(yieldpath, dirname), dstart, dend, **kwargs)
+    export_track_html(dstart, dend, os.path.join(yieldpath, dirname), engine, **kwargs)
     if errors > 0:
         logger.warning("%s 报告生成完毕， 但发生 %s 个错误", dirname, str(errors))
     else:
         logger.info("%s报告生成完毕", dirname)
 
+
+def export_docx(report_path, dstart, dend, **kwargs):
+    tpl_path = kwargs.get('template_dir') or './template'
+    tpl = DocxTemplate(os.path.join(tpl_path, 'report_tpl.docx'))
+    context = {
+        'datetime_interval' : " 至 ".join([x for x in (dstart.strftime("%Y年%-m月%-d日%H时"),
+                                                      dend.strftime("%Y年%-m月%-d日%H时"))]),
+        'buoys' : kwargs.get('args_buoys') or kwargs.get('valid_buoys') or kwargs.get('all_buoys', '')
+    }
+    subdirs = ['pies', 'barbs', 'splines', '']
+    for subdir in ['pies', 'barbs', 'splines', 'rosecharts']:
+        if os.path.exists(os.path.join(report_path, subdir)):
+            subpath = os.path.join(report_path, subdir)
+            for filename in os.listdir(subpath):
+                filepath = os.path.join(subpath, filename)
+                add_inline_image(tpl, context, subdir, filepath)
+    tpl.render(context)
+    report_filename = "_".join([x for x in (dstart.strftime("%Y年%-m月%-d日%H时"), dend.strftime("%Y年%-m月%-d日%H时"),
+                                            '.docx')])
+
+    tpl.save(os.path.join(report_path, report_filename))
+
+def add_inline_image(tpl, context, subdir, filepath):
+    if subdir == 'splines':
+        if '气温' in filepath:
+            image_list = context.setdefault('splines_qw', [])
+        elif '气压' in filepath:
+            image_list = context.setdefault('splines_qy', [])
+        elif '海温' in filepath:
+            image_list = context.setdefault('splines_hw', [])
+        elif '海盐' in filepath:
+            image_list = context.setdefault('splines_hy', [])
+        elif '风速' in filepath:
+            image_list = context.setdefault('splines_fs', [])
+        elif '风向' in filepath:
+            image_list = context.setdefault('splines_fx', [])
+        elif '浸没' in filepath:
+            image_list = context.setdefault('splines_jmzt', [])
+        elif '主板温度' in filepath:
+            image_list = context.setdefault('splines_zbwd', [])
+        elif '电源电压' in filepath:
+            image_list = context.setdefault('splines_dydy', [])
+        elif '横滚' in filepath:
+            image_list = context.setdefault('splines_hgjd', [])
+        elif '俯仰' in filepath:
+            image_list = context.setdefault('splines_fyjd', [])
+        elif '方位' in filepath:
+            image_list = context.setdefault('splines_fwjd', [])
+        else:
+            pass
+        image_list.append(InlineImage(tpl, filepath, width=Mm(146.5), height=Mm(64.1)))
+    elif subdir == 'pies':
+        context.setdefault('pies', []).append(InlineImage(tpl, filepath, width=Mm(146.5), height=Mm(109.9)))
+    elif subdir == 'barbs':
+        context.setdefault('windbarbs', []).append(InlineImage(tpl, filepath, width=Mm(146.5), height=Mm(64.1)))
+    elif subdir == 'rosecharts':
+        context.setdefault('windrose', []).append(InlineImage(tpl, filepath, width=Mm(146.5), height=Mm(146.5)))
+    else:
+        pass
+
+
+def export_track_html(dstart, dend, report_path, engine, **kwargs):
+    logger = logging.getLogger(__name__)
+    errors = 0
+    try:
+        valid_buoys = 'and plfbzh in (' + kwargs.get('valid_buoys') + ')' if kwargs.get('valid_buoys') else ''
+        sql_for_tracking = 'select plfbqzh,gcrqsj,jd,jdbq,wd,wdbq from nt_plfbgcsjb where gcrqsj >= "{:}" and gcrqsj < "{:}" ' \
+                           'and time_format(gcrqsj, "%i") = time_format("00", "%i") {:}'\
+            .format(dstart.strftime("%Y-%m-%d %H:%M"), dend.strftime("%Y-%m-%d %H:%M"), valid_buoys)
+        df = pd.read_sql_query(sql_for_tracking, engine)
+    except:
+        errors += 1
+        logger.exception("查询浮标位置数据时出错")
+        return errors
+
+    try:
+        if df.empty:
+            logger.debug("空数据集")
+            return errors
+        df['jd'] = df.apply(lambda row: row['jd'] if row['jdbq'] == 'E' else -row['jd'], axis=1)
+        df['wd'] = df.apply(lambda row: row['wd'] if row['wdbq'] == 'N' else -row['wd'], axis=1)
+        df['latlng'] = list(zip(df.wd, df.jd))
+        dfpivot = df.pivot(index='gcrqsj', columns='plfbqzh', values='latlng')
+        xticks = pd.date_range(start=dstart, end=dend - datetime.timedelta(hours=1), freq='H')
+        dfpivot = dfpivot.reindex(xticks)
+    except:
+        errors += 1
+        logger.exception("处理浮标轨迹信息时出错")
+        return errors
+
+    map = folium.Map(location=[19.36, 121.56], zoom_start=4,
+                     min_zoom=4, max_zoom=19,
+                     tiles='http://t{s}.tianditu.cn/DataServer?T=vec_w&X={x}&Y={y}&L={z}',
+                     subdomains=["0", "1", "2","3"],
+                     attr='tian ditu')
+    map.add_tile_layer(tiles='http://t{s}.tianditu.cn/DataServer?T=cva_w&X={x}&Y={y}&L={z}',
+                       subdomains=["0", "1", "2", "3"],
+                       attr='tian ditu label')
+    # folium.Marker([21.2, 119], popup='<b>经度:</b>119<br/><b>纬度:</b>21.2').add_to(map)
+    for qzh in dfpivot.columns:
+        buoy_track = folium.PolyLine([item for item in dfpivot[qzh] if item and item[1] != 0],
+                        popup=qzh,
+                        weight=3,
+                        color='purple',
+                        dash_array='4,4')
+        map.add_child(buoy_track)
+        attr_dir = {'fill': 'purple', 'font-size': '24'}
+        attr_txt = {'font-size': '12', 'orientation': 'flip'}
+        # plugins.PolyLineTextPath(buoy_track, "> ", repeat=True, offset=9, attributes=attr_dir).add_to(map)
+        plugins.PolyLineTextPath(buoy_track, qzh, offset=-5, attributes=attr_txt).add_to(map)
+        for index, pos in dfpivot[qzh].iteritems():
+            if pos and pos[1] != 0:
+                folium.CircleMarker(location=pos, radius=5, color='tomato', fill=True,
+                                    fill_color='tomato', fill_opacity=0.8,
+                                    popup='<b>区站号:</b>{}<br/><b>到达时刻:</b>{}<br/><b>经度:</b>{}<br/><b>纬度:</b>{}'
+                                    .format(qzh, index, pos[0], pos[1])).add_to(map)
+    map.fit_bounds(buoy_track.get_bounds())
+    html_filename = "_".join([x for x in (dstart.strftime("%Y年%-m月%-d日%H时"), dend.strftime("%Y年%-m月%-d日%H时"),
+                                            '.html')])
+    map.save(os.path.join(report_path, html_filename))
+    return errors
 
 
 
@@ -364,13 +498,16 @@ def plot_wind_barbs(dstart, dend, yieldpath, engine, **kwargs):
     tblname = 'nt_plfb[fs|fx]sjb'
     freq = '10T'
     item_buoys = kwargs.get(itemname + '_buoys') or ''
-    valid_buoys = item_buoys if item_buoys else (kwargs.get('args_buoys') or kwargs.get('valid_buoys') or '')
+    valid_buoys = item_buoys if item_buoys else (kwargs.get('args_buoys') or kwargs.get('valid_buoys')
+                                                 or kwargs.get('all_buoys', ''))
     logger.debug(kwargs.get(itemname + '_buoys'))
     logger.debug(valid_buoys)
     for qzh in valid_buoys.split(','):
+        if not qzh:
+            continue
         try:
             sql_barbs = 'select a.gcrqsj, a.fs, b.fx from nt_plfbfssjb a LEFT JOIN nt_plfbfxsjb b ON ' \
-                        'a.plfbqzh = b.plfbqzh and a.gcrqsj = b.gcrqsj where a.gcrqsj >= "{:}" and a.gcrqsj <= "{:}"' \
+                        'a.plfbqzh = b.plfbqzh and a.gcrqsj = b.gcrqsj where a.gcrqsj >= "{:}" and a.gcrqsj <= "{:}" ' \
                         'and a.plfbqzh = {:} order by a.gcrqsj;'.format(dstart.strftime("%Y-%m-%d %H:%M"),
                                                                         dend.strftime("%Y-%m-%d %H:%M"),
                                                                         qzh)
@@ -440,12 +577,14 @@ def plot_wind_barbs(dstart, dend, yieldpath, engine, **kwargs):
 
 
 if __name__ == '__main__':
-    dstart = datetime.datetime(2017, 5, 2, 21)
-    dend = datetime.datetime(2017, 8, 20, 20)
+    dstart = datetime.datetime(2017, 9, 28, 20)
+    dend = datetime.datetime(2017, 9, 29, 20)
+    engine = syncdb.getDBCon()
+    export_track_html(dstart, dend, '.', engine)
+    exit(0)
     dirname = "_".join([x for x in (dstart.strftime("%Y年%-m月%-d日%H时"), dend.strftime("%Y年%-m月%-d日%H时"))])
     print(dirname)
     yieldpath = './yield/图表报告'
     if not os.path.exists(os.path.join(yieldpath, dirname)):
         os.mkdir(os.path.join(yieldpath, dirname))
-    engine = syncdb.getDBCon()
     print(plot_wind_barbs(dstart, dend, os.path.join(yieldpath, dirname), engine, valid_buoys = '"S1042"'))
