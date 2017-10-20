@@ -720,7 +720,6 @@ def getDBCon():
     except KeyError:
         logger.exception("Errors found in the parser.ini. Please check it.")
         exit(1)
-    # dburl = "mysql+mysqlconnector://buoy2017:Nuist123456@115.159.148.71/cma01?charset=utf8"
     syncinst = SyncDB(Base, dburl)
     return syncinst.getengine()
 
