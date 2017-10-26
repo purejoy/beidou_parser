@@ -12,7 +12,9 @@ from sqlalchemy.dialects.mysql import DOUBLE
 import configparser
 import logging
 from urllib.parse import quote_plus as urlquote
-
+from alembic.migration import MigrationContext
+from alembic.operations import Operations
+from alembic import op
 
 
 Base = declarative_base()
@@ -210,6 +212,7 @@ class ObservationTable(Base):
     CRCBZ = Column(Unicode(32))
     TXBSJYH = Column(Unicode(32))
     JLWJMC = Column(Unicode(1024))
+    FILECOUNT = Column(TINYINT, default=0)
     __table_args__ = (UniqueConstraint(PLFBQZH, GCRQSJ, name="station_sampling_process"),)
 
     @classmethod
@@ -227,13 +230,16 @@ class ObservationTable(Base):
                 if o is None:
                     o = cls(**fieldnames)
                     session.add(o)
+                else:
+                    o.FILECOUNT += fieldnames['FILECOUNT']
             cache[key] = o
         return o
 
     @classmethod
     def get_rowcountbygcrqsj(cls, session, dstart, dend):
-        o = session.query(cls).filter(cls.GCRQSJ >= dstart, cls.GCRQSJ < dend).count()
-        return o
+        my_query = session.query(cls).filter(cls.GCRQSJ >= dstart, cls.GCRQSJ < dend)
+        sum = my_query.with_entities(func.sum(cls.FILECOUNT)).scalar()
+        return sum
 
 
 class QiWen(Base):
@@ -795,3 +801,16 @@ def db_menu(dburl):
     else:
         logger.info("退出操作")
         exit(0)
+
+def upgrade():
+    dburl = "mysql+mysqlconnector://user:password@localhost/dbname?charset=utf8"
+    syncinst = SyncDB(Base, dburl)
+    engine = syncinst.getengine()
+    conn = engine.connect()
+    ctx = MigrationContext.configure(conn)
+    op = Operations(ctx)
+    op.add_column('nt_plfbgcsjb', Column('FILECOUNT', TINYINT, nullable=True, default=0))
+
+
+if __name__ == '__main__':
+    upgrade()

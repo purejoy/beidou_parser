@@ -123,7 +123,22 @@ def parse_zfile(filepath, chunks, dburl=None, syncflush=False, **kwargs):
             t_parser = getattr(tblparsers, '_'.join([x for x in ('parse', tbl)]))
             t_parser(**tbl_parserargs[tbl])
             if tblrows_pending[tbl]:
-                tblrows_now[tbl].append(tblrows_pending[tbl])
+                if tbl == 'nt_plfbgcsjb':
+                    exist = False
+                    for idx, row in enumerate(tblrows_now[tbl]):
+                        if row['PLFBQZH'] == tblrows_pending[tbl]['PLFBQZH'] and \
+                                        row['GCRQSJ'] == tblrows_pending[tbl]['GCRQSJ']:
+                            if tblrows_pending[tbl]['JSRQSJ'] > row['JSRQSJ']:
+                                tblrows_pending[tbl]['FILECOUNT'] += 1
+                                tblrows_now[idx] = tblrows_pending[tbl]
+                            else:
+                                row['FILECOUNT'] += 1
+                            exist = True
+                            break
+                    if not exist:
+                        tblrows_now[tbl].append(tblrows_pending[tbl])
+                else:
+                    tblrows_now[tbl].append(tblrows_pending[tbl])
     except KeyError:
         logger.error("观测日期时间的分钟位非标准值 %s，应为(00, 10, 15, 30, 45, 50)", gcrqsj.minute)
         return False

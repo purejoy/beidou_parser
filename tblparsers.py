@@ -101,6 +101,7 @@ def parse_plfbgcsjb(rawdatagram, row, extra):
     row['ZTHGJD'] = row['ZTHGJD'] - 180
     row['ZTFYJD'] = row['ZTFYJD'] - 90
     row['BWJYH'] = hex(row['BWJYH']).upper().replace('X', 'x')
+    row['FILECOUNT'] = 1
 
     if not extra['COMPACT']:
         row['BDTXZLBS'] = row['BDTXZLBS'].decode('utf-8')
